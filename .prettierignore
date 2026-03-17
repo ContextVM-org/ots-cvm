@@ -1,0 +1,4 @@
+data/
+.venv-ots-test/
+opentimestamps-client/
+bun.lock

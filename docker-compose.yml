@@ -1,0 +1,12 @@
+services:
+  ots-cvm:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      SQLITE_PATH: data/ots-contextvm.sqlite
+      OTS_DATA_DIR: data/ots
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
