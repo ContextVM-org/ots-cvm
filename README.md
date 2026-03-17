@@ -37,12 +37,36 @@ Optional environment variables:
 - `OTS_CALENDARS`: comma-separated OpenTimestamps calendar URLs
 - `OTS_PYTHON_BIN`: optional Python executable override for local host development only
 
+Create a local [`.env`](.env) file before starting the service:
+
+```bash
+cp .env.example .env
+```
+
+Then edit [`.env`](.env) and set at least `SERVER_PRIVATE_KEY`.
+
+Notes:
+
+- [`SERVER_PRIVATE_KEY`](src/config.ts:41) is the only variable you should treat as required for production.
+- [`RELAYS`](src/config.ts:51), [`ATTESTATION_RELAYS`](src/config.ts:52), [`BITCOIN_API_URL`](src/config.ts:62), and [`LOG_LEVEL`](src/config.ts:63) are optional because the app has defaults.
+- [`.env.example`](.env.example) contains the minimal starter template for local and Docker usage.
+- [`docker-compose.yml`](docker-compose.yml) already loads values from [`.env`](.env) via `env_file`, so Docker deployments only need that file present next to the compose file.
+
 ## Docker runtime
 
 Docker bundles Bun, Python, and the OpenTimestamps dependencies. No extra Python setup is needed on the host.
 
 ```bash
 docker compose up --build
+```
+
+To run the published image directly, pass the same variables with [`--env-file`](README.md):
+
+```bash
+docker run --rm \
+  --env-file .env \
+  -v ./data:/app/data \
+  ghcr.io/<owner>/ots-cvm:latest
 ```
 
 The container persists runtime data in [`data/`](data/) and exposes logs through `docker compose logs`.

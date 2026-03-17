@@ -15,7 +15,6 @@ RUN python3 -m venv /opt/ots-venv \
   && /opt/ots-venv/bin/pip install --no-cache-dir -e ./opentimestamps-client
 
 COPY src ./src
-COPY .env ./.env
 COPY README.md ./README.md
 
 RUN mkdir -p /app/data/ots
