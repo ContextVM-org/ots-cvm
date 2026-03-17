@@ -42,7 +42,7 @@ async function main(): Promise<void> {
   });
 
   server.registerTool(
-    'timestamp_nostr_event',
+    'ots_event',
     {
       title: 'Timestamp Nostr Event',
       description:
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
   );
 
   server.registerTool(
-    'verify_ots_attestation',
+    'verify_ots',
     {
       title: 'Verify OTS Attestation',
       description: 'Verifies an OpenTimestamps proof for a Nostr event.',
