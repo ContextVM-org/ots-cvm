@@ -54,11 +54,17 @@ async function main(): Promise<void> {
           .describe(
             'Raw event id, nevent, or naddr reference for the target Nostr event'
           ),
+        relayUrls: z
+          .array(z.string().url())
+          .optional()
+          .describe(
+            'Additional relay URLs to merge into event resolution for the target'
+          ),
       },
       outputSchema: timestampResultSchema,
     },
-    async ({ target }) => {
-      const result = await jobService.requestTimestamp(target);
+    async ({ target, relayUrls }) => {
+      const result = await jobService.requestTimestamp(target, relayUrls);
       const structuredContent: Record<string, unknown> = { ...result };
 
       return {

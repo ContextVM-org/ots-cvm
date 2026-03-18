@@ -1,13 +1,11 @@
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { $ } from 'bun';
-import { nip19 } from 'nostr-tools';
 import type { AppConfig } from '../config.ts';
 import type { ResolvedTargetEvent } from '../domain/job.ts';
 import { AppLogger } from '../logger.ts';
 import { NostrClient } from '../nostr/client.ts';
 import { type VerifyProofResult, verifyProofResultSchema } from './schema.ts';
-import { isHex } from '../nostr/utils.ts';
 
 const VERIFY_PROOF_SCRIPT = join(import.meta.dir, 'verify-proof.py');
 
@@ -181,7 +179,26 @@ export class OtsClient {
   private async ensureCachedProof(
     targetInput: string
   ): Promise<{ eventId: string; otsPath: string }> {
-    const eventId = this.extractEventId(targetInput);
+    const resolvedInput = this.nostrClient.resolveInput(targetInput);
+    const eventId = resolvedInput.eventId;
+
+    if (!eventId) {
+      const target = await this.nostrClient.resolveAndFetchTarget(targetInput);
+      const resolvedOtsPath = this.getOtsPath(target.eventId);
+
+      if (!existsSync(resolvedOtsPath)) {
+        await this.populateProofCache(target, resolvedOtsPath);
+      }
+
+      if (!existsSync(resolvedOtsPath)) {
+        throw new Error(
+          `No OTS proof found for event ${target.eventId} at ${resolvedOtsPath}`
+        );
+      }
+
+      return { eventId: target.eventId, otsPath: resolvedOtsPath };
+    }
+
     const otsPath = this.getOtsPath(eventId);
     if (existsSync(otsPath)) {
       return { eventId, otsPath };
@@ -195,24 +212,6 @@ export class OtsClient {
     }
 
     return { eventId, otsPath };
-  }
-
-  private extractEventId(targetInput: string): string {
-    const normalized = targetInput.trim();
-    if (isHex(normalized)) {
-      return normalized.toLowerCase();
-    }
-
-    const decoded = nip19.decode(normalized);
-    if (decoded.type === 'nevent') {
-      return decoded.data.id;
-    }
-
-    if (decoded.type === 'note') {
-      return decoded.data;
-    }
-
-    throw new Error(`Cannot derive event id from input type: ${decoded.type}`);
   }
 
   private async populateProofCache(

@@ -17,8 +17,14 @@ export class TimestampJobService {
     private readonly logger: AppLogger
   ) {}
 
-  public async requestTimestamp(targetInput: string): Promise<TimestampResult> {
-    const resolved = await this.nostrClient.resolveAndFetchTarget(targetInput);
+  public async requestTimestamp(
+    targetInput: string,
+    relayUrls: string[] = []
+  ): Promise<TimestampResult> {
+    const resolved = await this.nostrClient.resolveAndFetchTarget(
+      targetInput,
+      relayUrls
+    );
     const existing = this.repository.findByTargetEventId(resolved.eventId);
 
     if (existing) {
@@ -47,6 +53,7 @@ export class TimestampJobService {
     try {
       this.logger.info('Processing timestamp request', {
         targetInput,
+        relayUrls,
         targetEventId: resolved.eventId,
       });
 

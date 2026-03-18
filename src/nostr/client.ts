@@ -30,9 +30,10 @@ export class NostrClient {
   ) {}
 
   public async resolveAndFetchTarget(
-    input: string
+    input: string,
+    additionalRelays: string[] = []
   ): Promise<ResolvedTargetEvent> {
-    const resolved = this.resolveInput(input);
+    const resolved = this.resolveInput(input, additionalRelays);
 
     let event: NostrEvent | null = null;
     if (resolved.eventId) {
@@ -62,6 +63,25 @@ export class NostrClient {
       relays: resolved.relays,
       event,
     };
+  }
+
+  public resolveInput(
+    input: string,
+    additionalRelays: string[] = []
+  ): ResolveResult {
+    const normalized = input.trim();
+    if (normalized.startsWith('naddr1')) {
+      return this.resolveNip19Input(normalized, additionalRelays);
+    }
+
+    if (isHex(normalized)) {
+      return {
+        eventId: normalized.toLowerCase(),
+        relays: this.mergeRelays(additionalRelays),
+      };
+    }
+
+    return this.resolveNip19Input(normalized, additionalRelays);
   }
 
   public async publishAttestation(
@@ -149,36 +169,30 @@ export class NostrClient {
     return attestation.content;
   }
 
-  private resolveInput(input: string): ResolveResult {
-    const normalized = input.trim();
-    if (isHex(normalized)) {
-      return {
-        eventId: normalized.toLowerCase(),
-        relays: [...this.defaultRelays],
-      };
-    }
-
+  private resolveNip19Input(
+    normalized: string,
+    additionalRelays: string[] = []
+  ): ResolveResult {
     const decoded = nip19.decode(normalized);
     if (decoded.type === 'nevent') {
       return {
         eventId: decoded.data.id,
-        relays: decoded.data.relays?.length
-          ? decoded.data.relays
-          : [...this.defaultRelays],
+        relays: this.mergeRelays(decoded.data.relays ?? [], additionalRelays),
         author: decoded.data.author,
         kind: decoded.data.kind,
       };
     }
 
     if (decoded.type === 'note') {
-      return { eventId: decoded.data, relays: [...this.defaultRelays] };
+      return {
+        eventId: decoded.data,
+        relays: this.mergeRelays(additionalRelays),
+      };
     }
 
     if (decoded.type === 'naddr') {
       return {
-        relays: decoded.data.relays?.length
-          ? decoded.data.relays
-          : [...this.defaultRelays],
+        relays: this.mergeRelays(decoded.data.relays ?? [], additionalRelays),
         author: decoded.data.pubkey,
         kind: decoded.data.kind,
         identifier: decoded.data.identifier,
@@ -186,5 +200,9 @@ export class NostrClient {
     }
 
     throw new Error(`Unsupported Nostr reference type: ${decoded.type}`);
+  }
+
+  private mergeRelays(...relayGroups: string[][]): string[] {
+    return [...new Set([...relayGroups.flat(), ...this.defaultRelays])];
   }
 }
