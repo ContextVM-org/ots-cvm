@@ -24,8 +24,17 @@ export class OtsClient {
     const inputPath = join(this.config.otsDataDir, `${eventId}.txt`);
     const otsPath = `${inputPath}.ots`;
 
-    await Bun.write(inputPath, `${eventId}\n`);
+    if (await Bun.file(otsPath).exists()) {
+      this.logger.info('Reusing existing OpenTimestamps proof', {
+        eventId,
+        otsPath,
+      });
+
+      return this.readProofResult(inputPath, otsPath);
+    }
+
     mkdirSync(dirname(inputPath), { recursive: true });
+    await Bun.write(inputPath, `${eventId}\n`);
 
     const calendarArgs = this.config.otsCalendarUrls.flatMap((url) => [
       '-c',
@@ -53,6 +62,24 @@ export class OtsClient {
     } catch (error) {
       const details = this.describeCommandError(error);
 
+      const otsFile = Bun.file(otsPath);
+      if (
+        (details.message.includes('File exists') ||
+          details.stderr?.includes('File exists')) &&
+        (await otsFile.exists())
+      ) {
+        this.logger.info(
+          'OpenTimestamps proof file already existed after stamp attempt; reusing file',
+          {
+            eventId,
+            otsPath,
+            ...details,
+          }
+        );
+
+        return this.readProofResult(inputPath, otsPath);
+      }
+
       this.logger.error('OpenTimestamps stamp command failed', {
         eventId,
         ...details,
@@ -66,6 +93,14 @@ export class OtsClient {
       throw new Error(`Expected OTS proof file at ${otsPath}`);
     }
 
+    return this.readProofResult(inputPath, otsPath);
+  }
+
+  private async readProofResult(
+    inputPath: string,
+    otsPath: string
+  ): Promise<{ inputPath: string; otsPath: string; otsBase64: string }> {
+    const otsFile = Bun.file(otsPath);
     const otsBuffer = Buffer.from(await otsFile.arrayBuffer());
 
     return {
