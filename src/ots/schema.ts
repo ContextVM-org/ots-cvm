@@ -1,10 +1,13 @@
 import { z } from 'zod';
 
 export const timestampResultSchema = z.object({
-  status: z.literal('completed'),
   targetEventId: z.string().length(64),
   attestationEventId: z.string().length(64),
-  message: z.string(),
+  message: z
+    .string()
+    .describe(
+      'Human-readable summary indicating whether the attestation was newly published or an existing one was reused'
+    ),
 });
 
 export const otsProofSummarySchema = z.object({

@@ -35,10 +35,9 @@ export class TimestampJobService {
       });
 
       return {
-        status: 'completed',
         targetEventId: existing.targetEventId,
         attestationEventId: existing.attestationEventId,
-        message: `Attestation already published for ${existing.targetEventId}`,
+        message: `Reused existing attestation for ${existing.targetEventId}`,
       };
     }
 
@@ -85,10 +84,9 @@ export class TimestampJobService {
       });
 
       return {
-        status: 'completed',
         targetEventId: resolved.eventId,
         attestationEventId,
-        message: `Attestation published for ${resolved.eventId}`,
+        message: `Published new attestation for ${resolved.eventId}`,
       };
     } finally {
       this.inflightJobs.delete(resolved.eventId);

@@ -11,7 +11,6 @@ export interface TimestampRecord {
 }
 
 export interface TimestampResult {
-  status: 'completed';
   targetEventId: string;
   attestationEventId: string;
   message: string;
