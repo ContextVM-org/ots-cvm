@@ -13,6 +13,13 @@ bun install
 bun run dev
 ```
 
+Easy deployment with the published image:
+
+```bash
+docker pull ghcr.io/contextvm-org/ots-cvm:latest
+docker run --rm --env-file .env -v ./data:/app/data ghcr.io/contextvm-org/ots-cvm:latest
+```
+
 Docker:
 
 ```bash
@@ -60,13 +67,13 @@ Docker bundles Bun, Python, and the OpenTimestamps dependencies. No extra Python
 docker compose up --build
 ```
 
-To run the published image directly, pass the same variables with [`--env-file`](README.md):
+To run the published image directly, pass the same variables with `--env-file`:
 
 ```bash
 docker run --rm \
   --env-file .env \
   -v ./data:/app/data \
-  ghcr.io/<owner>/ots-cvm:latest
+  ghcr.io/contextvm-org/ots-cvm:latest
 ```
 
 The container persists runtime data in [`data/`](data/) and exposes logs through `docker compose logs`.

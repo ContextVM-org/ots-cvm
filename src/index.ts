@@ -108,6 +108,7 @@ async function main(): Promise<void> {
       about:
         'ContextVM server for OpenTimestamps-backed NIP-03 attestations on Nostr events.',
     },
+    isPublicServer: config.isPublicServer,
   });
 
   await server.connect(transport);

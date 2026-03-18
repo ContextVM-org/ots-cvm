@@ -28,6 +28,7 @@ export interface AppConfig {
   serverPrivateKey: string;
   relayUrls: string[];
   attestationRelayUrls: string[];
+  isPublicServer: boolean;
   sqlitePath: string;
   otsDataDir: string;
   otsPythonBin: string;
@@ -52,6 +53,7 @@ export function getConfig(): AppConfig {
     attestationRelayUrls: readList(process.env.ATTESTATION_RELAYS, [
       ...DEFAULT_BOOTSTRAP_RELAY_URLS,
     ]),
+    isPublicServer: process.env.IS_PUBLIC_SERVER === 'true',
     sqlitePath: process.env.SQLITE_PATH ?? 'data/ots-contextvm.sqlite',
     otsDataDir: process.env.OTS_DATA_DIR ?? 'data/ots',
     otsPythonBin: process.env.OTS_PYTHON_BIN || 'python3',
