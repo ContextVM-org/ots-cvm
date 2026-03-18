@@ -28,6 +28,14 @@ async function main(): Promise<void> {
   );
   const otsClient = new OtsClient(config, nostrClient, logger);
   await otsClient.validateRuntimeDependencies();
+  otsClient.cleanupExpiredArtifacts();
+  const cleanupInterval = setInterval(
+    () => {
+      otsClient.cleanupExpiredArtifacts();
+    },
+    config.cleanupIntervalMinutes * 60 * 1000
+  );
+  cleanupInterval.unref();
   const jobService = new TimestampJobService(
     config,
     repository,
@@ -120,13 +128,17 @@ async function main(): Promise<void> {
     attestationRelays: config.attestationRelayUrls,
     sqlitePath: config.sqlitePath,
     otsDataDir: config.otsDataDir,
+    otsProofTtlDays: config.otsProofTtlDays,
     otsPythonBin: config.otsPythonBin,
     otsVerifyCacheDir: config.otsVerifyCacheDir,
+    otsVerifyCacheTtlDays: config.otsVerifyCacheTtlDays,
+    cleanupIntervalMinutes: config.cleanupIntervalMinutes,
     bitcoinApiUrl: config.bitcoinApiUrl,
   });
 
   process.on('SIGINT', async () => {
     logger.info('Received SIGINT, shutting down server');
+    clearInterval(cleanupInterval);
     await server.close();
     process.exit(0);
   });

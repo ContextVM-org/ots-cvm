@@ -40,7 +40,10 @@ Optional environment variables:
 
 - `SQLITE_PATH`: SQLite database file path
 - `OTS_DATA_DIR`: directory used for cached proof files
+- `OTS_PROOF_TTL_DAYS`: retention window for proof artifacts written to [`OTS_DATA_DIR`](src/config.ts:33) (default: 30)
 - `OTS_VERIFY_CACHE_DIR`: directory used by Python verification upgrades to cache calendar responses
+- `OTS_VERIFY_CACHE_TTL_DAYS`: retention window for verification cache files (default: 3)
+- `CLEANUP_INTERVAL_MINUTES`: how often expired filesystem artifacts are removed (default: 1440, once per day)
 - `OTS_CALENDARS`: comma-separated OpenTimestamps calendar URLs
 - `OTS_PYTHON_BIN`: optional Python executable override for local host development only
 
@@ -58,6 +61,7 @@ Notes:
 - [`RELAYS`](src/config.ts:51), [`ATTESTATION_RELAYS`](src/config.ts:52), [`BITCOIN_API_URL`](src/config.ts:62), and [`LOG_LEVEL`](src/config.ts:63) are optional because the app has defaults.
 - [`.env.example`](.env.example) contains the minimal starter template for local and Docker usage.
 - [`docker-compose.yml`](docker-compose.yml) already loads values from [`.env`](.env) via `env_file`, so Docker deployments only need that file present next to the compose file.
+- Proof and verification cache files are cleaned up automatically on startup and periodically afterwards using the configured TTL values.
 
 ## Docker runtime
 

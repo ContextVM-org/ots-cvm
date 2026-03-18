@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { $ } from 'bun';
 import type { AppConfig } from '../config.ts';
@@ -108,6 +108,58 @@ export class OtsClient {
       otsPath,
       otsBase64: otsBuffer.toString('base64'),
     };
+  }
+
+  public cleanupExpiredArtifacts(): void {
+    this.cleanupExpiredFilesInDir(
+      this.config.otsDataDir,
+      this.config.otsProofTtlDays * 24 * 60 * 60 * 1000,
+      'OpenTimestamps proof artifact'
+    );
+    this.cleanupExpiredFilesInDir(
+      this.config.otsVerifyCacheDir,
+      this.config.otsVerifyCacheTtlDays * 24 * 60 * 60 * 1000,
+      'OpenTimestamps verification cache artifact'
+    );
+  }
+
+  private cleanupExpiredFilesInDir(
+    directory: string,
+    ttlMs: number,
+    artifactType: string
+  ): void {
+    if (!existsSync(directory)) {
+      return;
+    }
+
+    const cutoff = Date.now() - ttlMs;
+
+    for (const entry of readdirSync(directory, { recursive: true })) {
+      const path = join(directory, entry.toString());
+
+      try {
+        const stats = statSync(path);
+        if (!stats.isFile() || stats.mtimeMs >= cutoff) {
+          continue;
+        }
+
+        rmSync(path, { force: true });
+        this.logger.info('Removed expired artifact during retention cleanup', {
+          artifactType,
+          path,
+          ttlMs,
+        });
+      } catch (error) {
+        this.logger.debug(
+          'Failed to process artifact during retention cleanup',
+          {
+            artifactType,
+            path,
+            error: error instanceof Error ? error.message : String(error),
+          }
+        );
+      }
+    }
   }
 
   public async validateRuntimeDependencies(): Promise<void> {
